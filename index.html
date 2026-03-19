@@ -1,140 +1,102 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-  <meta charset="utf-8">
-  <title>Лаб 6: Сбор монет (A-Frame VR + физика)</title>
-  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <!-- Физика (CANNON.js) -->
-  <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v4.2.4/dist/aframe-physics-system.min.js"></script>
+<meta charset="utf-8">
+<title>A-Frame Game Fixed</title>
+<script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-physics-system@v4.0.1/dist/aframe-physics-system.min.js"></script>
+<script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 </head>
 <body>
-  <a-scene physics="driver: cannon; debug: false">
-    <!-- Активы -->
-    <a-assets>
-      <!-- Текстура земли (изображение) -->
-      <img id="ground-texture" src="https://raw.githubusercontent.com/aframevr/aframe/master/examples/assets/textures/terrain.png">
-      <!-- 3D-модель из Blender (glTF — замените на свою экспортированную модель) -->
-      <a-asset-item id="duck-model" src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF/Duck.gltf"></a-asset-item>
-      <!-- Аудио (звук сбора) -->
-      <audio id="collect-sound" src="https://freesound.org/data/previews/276/276951_5123854-lq.mp3"></audio>
-    </a-assets>
 
-    <!-- Небо -->
-    <a-sky color="#87CEEB"></a-sky>
+<a-scene physics="gravity: -9.8">
+<a-assets>
+<img id="groundTex" crossorigin="anonymous" src="https://cdn.aframe.io/a-painter/images/floor.jpg">
+<img id="skyTex" crossorigin="anonymous" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg">
+<audio id="collectSound" src="https://cdn.aframe.io/basic-guide/audio/backgroundnoise.wav"></audio>
+</a-assets>
 
-    <!-- Земля (текстура + физика static) -->
-    <a-plane 
-      rotation="-90 0 0" 
-      position="0 0 0" 
-      width="50" height="50" 
-      material="src: #ground-texture; repeat: 10 10" 
-      body="type: static; shape: box">
-    </a-plane>
+<a-sky src="#skyTex"></a-sky>
+<a-plane src="#groundTex" rotation="-90 0 0" width="50" height="50" static-body></a-plane>
 
-    <!-- Свет -->
-    <a-light type="ambient" color="#AAA"></a-light>
-    <a-light type="directional" position="5 10 5" intensity="0.8"></a-light>
+<a-entity light="type: ambient; intensity: 0.5"></a-entity>
+<a-entity light="type: directional; intensity: 1" position="1 1 0"></a-entity>
 
-    <!-- Камера (с курсором для клика на ПК/VR) -->
-    <a-camera position="0 1.6 8" wasd-controls="acceleration: 30">
-      <a-cursor color="#FF0000" raycaster="objects: .coin"></a-cursor>
-    </a-camera>
+<a-entity id="player" position="0 1.6 5">
+<a-camera>
+<a-cursor raycaster="objects: .clickable"></a-cursor>
+</a-camera>
+</a-entity>
 
-    <!-- Группа монет (потомки одного предка — трансформация наследуется) -->
-    <a-entity id="coins-group" position="0 0 -5">
-      <!-- 5 монет (с анимацией вращения) -->
-      <a-entity class="coin" position="-4 2 0">
-        <a-ring radius-inner="0.1" radius-outer="0.3" color="#FFD700" 
-                body="type: static"
-                animation="property: rotation; to: 0 360 0; dur: 1500; repeat: indefinite; easing: linear">
-        </a-ring>
-      </a-entity>
-      <a-entity class="coin" position="-2 3 1">
-        <a-ring radius-inner="0.1" radius-outer="0.3" color="#FFD700" 
-                body="type: static"
-                animation="property: rotation; to: 0 360 0; dur: 1500; repeat: indefinite; easing: linear">
-        </a-ring>
-      </a-entity>
-      <a-entity class="coin" position="0 2 -1">
-        <a-ring radius-inner="0.1" radius-outer="0.3" color="#FFD700" 
-                body="type: static"
-                animation="property: rotation; to: 0 360 0; dur: 1500; repeat: indefinite; easing: linear">
-        </a-ring>
-      </a-entity>
-      <a-entity class="coin" position="2 3 0">
-        <a-ring radius-inner="0.1" radius-outer="0.3" color="#FFD700" 
-                body="type: static"
-                animation="property: rotation; to: 0 360 0; dur: 1500; repeat: indefinite; easing: linear">
-        </a-ring>
-      </a-entity>
-      <a-entity class="coin" position="4 2 2">
-        <a-ring radius-inner="0.1" radius-outer="0.3" color="#FFD700" 
-                body="type: static"
-                animation="property: rotation; to: 0 360 0; dur: 1500; repeat: indefinite; easing: linear">
-        </a-ring>
-      </a-entity>
-    </a-entity>
+<a-text id="scoreText" value="Score: 0" position="-1 2 -3" color="#FFF"></a-text>
+<a-text id="gameOver" value="" position="-2 3 -4" color="red"></a-text>
 
-    <!-- Демонстрация физики: падающий куб (dynamic-body) -->
-    <a-box position="6 8 -3" color="#FF00FF" 
-           body="type: dynamic; mass: 2" 
-           scale="0.5 0.5 0.5"></a-box>
+<a-entity>
+<a-box class="collectible clickable" position="0 1 -5" color="red"></a-box>
+<a-sphere class="collectible clickable" position="2 1 -6" color="blue"></a-sphere>
+<a-cylinder class="collectible clickable" position="-2 1 -4" color="green"></a-cylinder>
+</a-entity>
 
-    <!-- 3D-модель из Blender (потомок группы) -->
-    <a-entity gltf-model="#duck-model" position="8 1 -8" scale="1.5 1.5 1.5" rotation="0 45 0"></a-entity>
+<a-box id="obstacle" position="0 1 -8" color="black"
+animation="property: position; to: 3 1 -8; dir: alternate; loop: true; dur: 2000">
+</a-box>
 
-    <!-- UI: счётчик и текст победы -->
-    <a-text id="score-text" value="Счёт: 0 / 5" 
-            position="-2 3 -4" scale="1.5 1.5 1.5" color="#FFFFFF" align="center"></a-text>
-    <a-text id="win-text" value="ПОБЕДА! Вы собрали все монеты!" 
-            position="0 4 -6" scale="2 2 2" color="#00FF00" align="center" 
-            visible="false"></a-text>
-  </a-scene>
+</a-scene>
 
-  <script>
-    let score = 0;
-    const totalCoins = 5;
-    const scoreText = document.getElementById('score-text');
-    const winText = document.getElementById('win-text');
-    const collectSound = document.getElementById('collect-sound');
+<script>
+let score=0;
+let gameOver=false;
+const scoreText=document.querySelector('#scoreText');
+const gameOverText=document.querySelector('#gameOver');
+const sound=document.querySelector('#collectSound');
 
-    // Интерактивность + анимация по событию
-    document.querySelectorAll('.coin').forEach(coin => {
-      coin.addEventListener('click', function (evt) {
-        // Анимация исчезновения (по событию click)
-        this.setAttribute('animation', {
-          property: 'scale',
-          to: '0 0 0',
-          dur: 300,
-          easing: 'ease-out'
-        });
+function endGame(win){
+if(gameOver)return;
+gameOver=true;
+if(win){
+gameOverText.setAttribute('value','YOU WIN! Score: '+score);
+}else{
+gameOverText.setAttribute('value','GAME OVER! Score: '+score);
+}
+}
 
-        // Задержка перед удалением
-        setTimeout(() => {
-          if (this.parentNode) this.parentNode.removeChild(this);
-        }, 300);
+document.querySelectorAll('.collectible').forEach(el=>{
+el.addEventListener('click',()=>{
+if(gameOver)return;
+score++;
+scoreText.setAttribute('value','Score: '+score);
+sound.play();
+el.setAttribute('animation','property: scale; to: 0 0 0; dur:300');
+setTimeout(()=>el.remove(),300);
+if(score>=3)endGame(true);
+});
+});
 
-        // Звук
-        collectSound.currentTime = 0;
-        collectSound.play();
+const player=document.querySelector('#player');
+const obstacle=document.querySelector('#obstacle');
 
-        // Счётчик
-        score++;
-        scoreText.setAttribute('value', `Счёт: ${score} / ${totalCoins}`);
+function checkCollision(){
+if(gameOver)return;
+const p=player.object3D.position;
+const o=obstacle.object3D.position;
+const dist=Math.sqrt(
+Math.pow(p.x-o.x,2)+
+Math.pow(p.z-o.z,2)
+);
+if(dist<1.5)endGame(false);
+requestAnimationFrame(checkCollision);
+}
+checkCollision();
+</script>
 
-        // Победа
-        if (score >= totalCoins) {
-          winText.setAttribute('visible', 'true');
-          // Дополнительная анимация победы
-          winText.setAttribute('animation', {
-            property: 'scale',
-            from: '0 0 0',
-            to: '2 2 2',
-            dur: 1000
-          });
-        }
-      });
-    });
-  </script>
+<a-scene embedded arjs>
+<a-marker preset="hiro">
+<a-box position="0 0.5 0" color="yellow"
+animation="property: rotation; to: 0 360 0; loop: true; dur: 3000">
+</a-box>
+</a-marker>
+<a-entity camera></a-entity>
+</a-scene>
+
 </body>
 </html>
