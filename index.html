@@ -1,73 +1,140 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>AR&VR lab</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-physics-system@v4.2.2/dist/aframe-physics-system.min.js"></script>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Лаб 6: Сбор монет (A-Frame VR + физика)</title>
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <!-- Физика (CANNON.js) -->
+  <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v4.2.4/dist/aframe-physics-system.min.js"></script>
+</head>
+<body>
+  <a-scene physics="driver: cannon; debug: false">
+    <!-- Активы -->
+    <a-assets>
+      <!-- Текстура земли (изображение) -->
+      <img id="ground-texture" src="https://raw.githubusercontent.com/aframevr/aframe/master/examples/assets/textures/terrain.png">
+      <!-- 3D-модель из Blender (glTF — замените на свою экспортированную модель) -->
+      <a-asset-item id="duck-model" src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF/Duck.gltf"></a-asset-item>
+      <!-- Аудио (звук сбора) -->
+      <audio id="collect-sound" src="https://freesound.org/data/previews/276/276951_5123854-lq.mp3"></audio>
+    </a-assets>
 
-    <script>
-      // Компонент игры
-      AFRAME.registerComponent('game-logic', {
-        init: function () {
-          this.score = 0;
-          this.scoreText = document.querySelector('#score');
-          this.winText = document.querySelector('#win-panel');
-          
-          this.el.addEventListener('click', (e) => {
-            const target = e.detail.intersectedEl;
-            if (target && target.classList.contains('clickable')) {
-              this.score++;
-              this.scoreText.setAttribute('value', 'Score: ' + this.score);
-              
-              // Прячем объект
-              target.setAttribute('visible', 'false');
-              target.classList.remove('clickable');
+    <!-- Небо -->
+    <a-sky color="#87CEEB"></a-sky>
 
-              // Звук без файла (бип через браузер)
-              const a=new AudioContext(); const o=a.createOscillator(); o.connect(a.destination); o.start(); o.stop(a.currentTime+0.1);
+    <!-- Земля (текстура + физика static) -->
+    <a-plane 
+      rotation="-90 0 0" 
+      position="0 0 0" 
+      width="50" height="50" 
+      material="src: #ground-texture; repeat: 10 10" 
+      body="type: static; shape: box">
+    </a-plane>
 
-              if (this.score >= 3) {
-                this.winText.setAttribute('visible', 'true');
-              }
-            }
+    <!-- Свет -->
+    <a-light type="ambient" color="#AAA"></a-light>
+    <a-light type="directional" position="5 10 5" intensity="0.8"></a-light>
+
+    <!-- Камера (с курсором для клика на ПК/VR) -->
+    <a-camera position="0 1.6 8" wasd-controls="acceleration: 30">
+      <a-cursor color="#FF0000" raycaster="objects: .coin"></a-cursor>
+    </a-camera>
+
+    <!-- Группа монет (потомки одного предка — трансформация наследуется) -->
+    <a-entity id="coins-group" position="0 0 -5">
+      <!-- 5 монет (с анимацией вращения) -->
+      <a-entity class="coin" position="-4 2 0">
+        <a-ring radius-inner="0.1" radius-outer="0.3" color="#FFD700" 
+                body="type: static"
+                animation="property: rotation; to: 0 360 0; dur: 1500; repeat: indefinite; easing: linear">
+        </a-ring>
+      </a-entity>
+      <a-entity class="coin" position="-2 3 1">
+        <a-ring radius-inner="0.1" radius-outer="0.3" color="#FFD700" 
+                body="type: static"
+                animation="property: rotation; to: 0 360 0; dur: 1500; repeat: indefinite; easing: linear">
+        </a-ring>
+      </a-entity>
+      <a-entity class="coin" position="0 2 -1">
+        <a-ring radius-inner="0.1" radius-outer="0.3" color="#FFD700" 
+                body="type: static"
+                animation="property: rotation; to: 0 360 0; dur: 1500; repeat: indefinite; easing: linear">
+        </a-ring>
+      </a-entity>
+      <a-entity class="coin" position="2 3 0">
+        <a-ring radius-inner="0.1" radius-outer="0.3" color="#FFD700" 
+                body="type: static"
+                animation="property: rotation; to: 0 360 0; dur: 1500; repeat: indefinite; easing: linear">
+        </a-ring>
+      </a-entity>
+      <a-entity class="coin" position="4 2 2">
+        <a-ring radius-inner="0.1" radius-outer="0.3" color="#FFD700" 
+                body="type: static"
+                animation="property: rotation; to: 0 360 0; dur: 1500; repeat: indefinite; easing: linear">
+        </a-ring>
+      </a-entity>
+    </a-entity>
+
+    <!-- Демонстрация физики: падающий куб (dynamic-body) -->
+    <a-box position="6 8 -3" color="#FF00FF" 
+           body="type: dynamic; mass: 2" 
+           scale="0.5 0.5 0.5"></a-box>
+
+    <!-- 3D-модель из Blender (потомок группы) -->
+    <a-entity gltf-model="#duck-model" position="8 1 -8" scale="1.5 1.5 1.5" rotation="0 45 0"></a-entity>
+
+    <!-- UI: счётчик и текст победы -->
+    <a-text id="score-text" value="Счёт: 0 / 5" 
+            position="-2 3 -4" scale="1.5 1.5 1.5" color="#FFFFFF" align="center"></a-text>
+    <a-text id="win-text" value="ПОБЕДА! Вы собрали все монеты!" 
+            position="0 4 -6" scale="2 2 2" color="#00FF00" align="center" 
+            visible="false"></a-text>
+  </a-scene>
+
+  <script>
+    let score = 0;
+    const totalCoins = 5;
+    const scoreText = document.getElementById('score-text');
+    const winText = document.getElementById('win-text');
+    const collectSound = document.getElementById('collect-sound');
+
+    // Интерактивность + анимация по событию
+    document.querySelectorAll('.coin').forEach(coin => {
+      coin.addEventListener('click', function (evt) {
+        // Анимация исчезновения (по событию click)
+        this.setAttribute('animation', {
+          property: 'scale',
+          to: '0 0 0',
+          dur: 300,
+          easing: 'ease-out'
+        });
+
+        // Задержка перед удалением
+        setTimeout(() => {
+          if (this.parentNode) this.parentNode.removeChild(this);
+        }, 300);
+
+        // Звук
+        collectSound.currentTime = 0;
+        collectSound.play();
+
+        // Счётчик
+        score++;
+        scoreText.setAttribute('value', `Счёт: ${score} / ${totalCoins}`);
+
+        // Победа
+        if (score >= totalCoins) {
+          winText.setAttribute('visible', 'true');
+          // Дополнительная анимация победы
+          winText.setAttribute('animation', {
+            property: 'scale',
+            from: '0 0 0',
+            to: '2 2 2',
+            dur: 1000
           });
         }
       });
-    </script>
-  </head>
-  <body>
-    <a-scene loading-screen="enabled: false" physics="debug: false" game-logic cursor="rayOrigin: mouse">
-      
-      <a-assets timeout="1"></a-assets>
-
-      <a-sky color="#1a1a1a"></a-sky>
-      <a-plane static-body rotation="-90 0 0" width="20" height="20" color="#2c3e50"></a-plane>
-
-      <a-camera position="0 1.6 0">
-        <a-text id="score" value="Score: 0" position="-0.7 0.7 -1" color="lime" width="4"></a-text>
-        
-        <a-entity id="win-panel" visible="false" position="0 0 -1.2">
-          <a-plane color="black" width="1.5" height="0.8" opacity="0.9"></a-entity>
-          <a-text value="WIN! LAB DONE" align="center" color="gold" width="5" position="0 0 0.01"></a-text>
-        </a-entity>
-      </a-camera>
-
-      <a-entity id="targets" position="0 0 -4">
-        
-        <a-box class="clickable" static-body position="-1.5 1 0" color="red"
-               animation="property: rotation; to: 0 360 0; loop: true; dur: 4000"></a-box>
-
-        <a-sphere class="clickable" static-body position="0 1.5 0" radius="0.6" color="blue"
-                  animation__h="property: scale; to: 1.2 1.2 1.2; startEvents: mouseenter; dur: 200"></a-sphere>
-
-        <a-cone class="clickable" dynamic-body position="1.5 4 0" color="green" radius-bottom="0.5"></a-cone>
-
-      </a-entity>
-
-      <a-light type="ambient" intensity="0.7"></a-light>
-      <a-light type="directional" position="1 3 2"></a-light>
-
-    </a-scene>
-  </body>
+    });
+  </script>
+</body>
 </html>
