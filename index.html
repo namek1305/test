@@ -1,93 +1,73 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <meta charset="utf-8">
     <title>AR&VR lab</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-physics-system@v4.2.2/dist/aframe-physics-system.min.js"></script>
 
     <script>
-        AFRAME.registerComponent('game-master', {
-            init: function () {
-                this.score = 0;
-                this.targetsToWin = 3;
-                this.scoreText = document.querySelector('#score-display');
-                this.victoryPanel = document.querySelector('#victory-panel');
-                
-                // Звук клика (создаем через AudioContext, чтобы не зависеть от файлов)
-                this.clickSound = () => {
-                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(880, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.1);
-                };
+      // Компонент игры
+      AFRAME.registerComponent('game-logic', {
+        init: function () {
+          this.score = 0;
+          this.scoreText = document.querySelector('#score');
+          this.winText = document.querySelector('#win-panel');
+          
+          this.el.addEventListener('click', (e) => {
+            const target = e.detail.intersectedEl;
+            if (target && target.classList.contains('clickable')) {
+              this.score++;
+              this.scoreText.setAttribute('value', 'Score: ' + this.score);
+              
+              // Прячем объект
+              target.setAttribute('visible', 'false');
+              target.classList.remove('clickable');
 
-                this.el.addEventListener('click', (e) => {
-                    const target = e.detail.intersectedEl;
-                    if (target && target.classList.contains('clickable')) {
-                        this.collect(target);
-                    }
-                });
-            },
-            collect: function (obj) {
-                this.score++;
-                this.clickSound();
-                
-                // 3. Обновление счетчика очков
-                this.scoreText.setAttribute('value', 'Score: ' + this.score);
-                
-                // Скрываем объект
-                obj.setAttribute('visible', 'false');
-                obj.classList.remove('clickable');
+              // Звук без файла (бип через браузер)
+              const a=new AudioContext(); const o=a.createOscillator(); o.connect(a.destination); o.start(); o.stop(a.currentTime+0.1);
 
-                // 4. Завершение игры и результаты
-                if (this.score >= this.targetsToWin) {
-                    this.victoryPanel.setAttribute('visible', 'true');
-                }
+              if (this.score >= 3) {
+                this.winText.setAttribute('visible', 'true');
+              }
             }
-        });
+          });
+        }
+      });
     </script>
-</head>
-<body style="margin: 0; background: #000;">
-    <a-scene physics="debug: false" game-master cursor="rayOrigin: mouse" loading-screen="enabled: false">
+  </head>
+  <body>
+    <a-scene loading-screen="enabled: false" physics="debug: false" game-logic cursor="rayOrigin: mouse">
+      
+      <a-assets timeout="1"></a-assets>
+
+      <a-sky color="#1a1a1a"></a-sky>
+      <a-plane static-body rotation="-90 0 0" width="20" height="20" color="#2c3e50"></a-plane>
+
+      <a-camera position="0 1.6 0">
+        <a-text id="score" value="Score: 0" position="-0.7 0.7 -1" color="lime" width="4"></a-text>
         
-        <a-assets timeout="1000">
-            <img id="ground-texture" src="https://cdn.aframe.io/a-painter/images/floor.jpg" crossorigin="anonymous">
-            <a-asset-item id="blender-model" src="https://cdn.aframe.io/test-models/models/glTF-2.0/virtualcity/VC.gltf"></a-asset-item>
-        </a-assets>
-
-        <a-sky color="#0a0a0a"></a-sky> <a-plane static-body rotation="-90 0 0" width="30" height="30" src="#ground-texture" color="#555"></a-plane> <a-light type="ambient" intensity="0.6"></a-light> <a-light type="directional" position="1 3 2" intensity="0.5"></a-light>
-        <a-camera position="0 1.6 0"> <a-text id="score-display" value="Score: 0" position="-0.7 0.6 -1" color="#00FF00" width="4"></a-text>
-            
-            <a-entity id="victory-panel" visible="false" position="0 0 -1.1">
-                <a-plane color="#111" width="1.2" height="0.6" opacity="0.9"></a-plane>
-                <a-text value="VICTORY!" align="center" position="0 0.1 0.01" color="gold" width="5"></a-text>
-                <a-text value="Laba Completed" align="center" position="0 -0.1 0.01" color="white" width="2"></a-text>
-            </a-entity>
-        </a-camera>
-
-        <a-entity id="level-parent" position="0 0 -5">
-            
-            <a-entity class="clickable" gltf-model="#blender-model" scale="0.01 0.01 0.01" 
-                      position="-2 0 0" static-body
-                      animation="property: rotation; to: 0 360 0; loop: true; dur: 5000">
-            </a-entity>
-
-            <a-box class="clickable" color="#FF0000" position="0 1 0" static-body
-                   animation__hover="property: scale; to: 1.2 1.2 1.2; startEvents: mouseenter; dur: 200"
-                   animation__leave="property: scale; to: 1 1 1; startEvents: mouseleave; dur: 200">
-            </a-box>
-
-            <a-sphere class="clickable" color="#0000FF" position="2 4 0" radius="0.5" dynamic-body></a-sphere>
-
+        <a-entity id="win-panel" visible="false" position="0 0 -1.2">
+          <a-plane color="black" width="1.5" height="0.8" opacity="0.9"></a-entity>
+          <a-text value="WIN! LAB DONE" align="center" color="gold" width="5" position="0 0 0.01"></a-text>
         </a-entity>
+      </a-camera>
+
+      <a-entity id="targets" position="0 0 -4">
+        
+        <a-box class="clickable" static-body position="-1.5 1 0" color="red"
+               animation="property: rotation; to: 0 360 0; loop: true; dur: 4000"></a-box>
+
+        <a-sphere class="clickable" static-body position="0 1.5 0" radius="0.6" color="blue"
+                  animation__h="property: scale; to: 1.2 1.2 1.2; startEvents: mouseenter; dur: 200"></a-sphere>
+
+        <a-cone class="clickable" dynamic-body position="1.5 4 0" color="green" radius-bottom="0.5"></a-cone>
+
+      </a-entity>
+
+      <a-light type="ambient" intensity="0.7"></a-light>
+      <a-light type="directional" position="1 3 2"></a-light>
 
     </a-scene>
-</body>
+  </body>
 </html>
