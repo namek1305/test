@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Sanya's Laba 6 - Final</title>
+    <title>Sanya Laba 6 Final</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-physics-system@v4.2.2/dist/aframe-physics-system.min.js"></script>
 
@@ -10,80 +10,69 @@
       AFRAME.registerComponent('game-logic', {
         init: function () {
           this.score = 0;
-          this.totalTargets = 3; // Сколько всего объектов нужно собрать
-          this.scoreDisplay = document.querySelector('#scoreText');
-          this.resultPanel = document.querySelector('#resultPanel');
-          this.finalScore = document.querySelector('#finalScore');
-
-          // Слушаем клики по всей сцене, но реагируем только на класс .target
-          this.el.addEventListener('click', (evt) => {
-            const clickedEl = evt.detail.intersectedEl;
-            if (clickedEl && clickedEl.classList.contains('target')) {
-              this.collect(clickedEl);
+          this.total = 3;
+          this.scoreText = document.querySelector('#score');
+          this.winPanel = document.querySelector('#win-panel');
+          
+          // Слушаем клики
+          this.el.addEventListener('click', (e) => {
+            if (e.detail.intersectedEl && e.detail.intersectedEl.classList.contains('target')) {
+              this.collect(e.detail.intersectedEl);
             }
           });
         },
-
         collect: function (obj) {
           this.score++;
-          // 3. Добавляем счетчик очков и отображаем его
-          this.scoreDisplay.setAttribute('value', 'Score: ' + this.score);
+          this.scoreText.setAttribute('value', 'Score: ' + this.score);
           
-          // Удаляем объект
+          // Проигрываем встроенный звук (писк)
+          const beep = new AudioContext();
+          const o = beep.createOscillator();
+          o.connect(beep.destination);
+          o.start();
+          o.stop(beep.currentTime + 0.1);
+
           obj.parentNode.removeChild(obj);
 
-          // 4. Настройка завершения игры
-          if (this.score >= this.totalTargets) {
-            this.showResults();
+          if (this.score >= this.total) {
+            this.winPanel.setAttribute('visible', 'true');
           }
-        },
-
-        showResults: function () {
-          // Показываем панель результатов
-          this.resultPanel.setAttribute('visible', 'true');
-          this.finalScore.setAttribute('value', 'Total Score: ' + this.score + ' / ' + this.totalTargets);
-          this.scoreDisplay.setAttribute('visible', 'false');
         }
       });
     </script>
   </head>
   <body>
-    <a-scene physics="debug: false" game-logic cursor="rayOrigin: mouse" raycaster="objects: .target">
+    <a-scene physics="debug: false" game-logic cursor="rayOrigin: mouse" raycaster="objects: .target" loading-screen="dotsColor: white; backgroundColor: black">
       
-      <a-assets>
-        <img id="groundTex" src="https://cdn.aframe.io/a-painter/images/floor.jpg">
-        <a-asset-item id="myModel" src="https://cdn.aframe.io/test-models/models/glTF-2.0/virtualcity/VC.gltf"></a-asset-item>
-      </a-assets>
+      <a-assets timeout="1000">
+        </a-assets>
 
-      <a-sky color="#111"></a-sky>
-      <a-plane static-body rotation="-90 0 0" width="20" height="20" src="#groundTex"></a-plane>
+      <a-sky color="#242424"></a-sky>
+      <a-plane static-body rotation="-90 0 0" width="100" height="100" color="#333"></a-plane>
 
       <a-camera position="0 1.6 0">
-        <a-text id="scoreText" value="Score: 0" position="-0.5 0.5 -1" color="white" width="3"></a-text>
+        <a-text id="score" value="Score: 0" position="-0.5 0.5 -1" color="gold" width="4"></a-text>
         
-        <a-entity id="resultPanel" visible="false" position="0 0 -1.2">
-          <a-plane color="#000" width="1.5" height="1" opacity="0.8"></a-plane>
-          <a-text value="LEVEL COMPLETE" align="center" position="0 0.2 0.01" color="gold" width="4"></a-text>
-          <a-text id="finalScore" value="" align="center" position="0 -0.1 0.01" color="white" width="3"></a-text>
+        <a-entity id="win-panel" visible="false" position="0 0 -1">
+          <a-plane color="#111" width="1" height="0.6" opacity="0.9"></a-plane>
+          <a-text value="WIN! Score: 3/3" align="center" color="lime" width="4"></a-text>
         </a-entity>
       </a-camera>
 
-      <a-entity id="game-objects">
-        <a-entity position="-2 1 -4">
-           <a-entity class="target" gltf-model="#myModel" scale="0.01 0.01 0.01" static-body
-                     animation="property: rotation; to: 0 360 0; loop: true; dur: 5000">
-           </a-entity>
-        </a-entity>
+      <a-entity id="parent-container" position="0 0 -4">
+        
+        <a-sphere class="target" dynamic-body position="-2 5 0" radius="0.5" color="red"
+                  animation="property: position; to: -2 5.5 0; dir: alternate; loop: true"></a-sphere>
 
-        <a-box class="target" dynamic-body position="0 5 -5" color="red" 
-               animation__event="property: scale; to: 1.5 1.5 1.5; startEvents: mouseenter; dur: 300">
-        </a-box>
+        <a-box class="target" dynamic-body position="0 6 0" color="blue"
+               animation__click="property: scale; from: 1 1 1; to: 1.2 1.2 1.2; startEvents: mouseenter; dur: 200"></a-box>
 
-        <a-sphere class="target" dynamic-body position="2 4 -3" radius="0.5" color="blue"></a-sphere>
+        <a-cone class="target" dynamic-body position="2 7 0" color="green" radius-bottom="0.5"></a-cone>
+
       </a-entity>
 
-      <a-light type="ambient" intensity="0.5"></a-light>
-      <a-light type="directional" position="1 2 1"></a-light>
+      <a-light type="ambient" intensity="0.6"></a-light>
+      <a-light type="directional" position="1 2 1" intensity="0.5"></a-light>
 
     </a-scene>
   </body>
