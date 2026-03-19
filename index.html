@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Sanya Laba 6 Final</title>
+    <title>AR&VR lab</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-physics-system@v4.2.2/dist/aframe-physics-system.min.js"></script>
 
@@ -10,69 +10,67 @@
       AFRAME.registerComponent('game-logic', {
         init: function () {
           this.score = 0;
-          this.total = 3;
-          this.scoreText = document.querySelector('#score');
-          this.winPanel = document.querySelector('#win-panel');
+          this.totalTargets = 3; // Общее количество фигур
+          this.scoreText = document.querySelector('#score-val');
+          this.victoryScreen = document.querySelector('#victory-msg');
           
-          // Слушаем клики
+          // Слушаем клики по объектам с классом 'target'
           this.el.addEventListener('click', (e) => {
             if (e.detail.intersectedEl && e.detail.intersectedEl.classList.contains('target')) {
-              this.collect(e.detail.intersectedEl);
+              this.handlePoint(e.detail.intersectedEl);
             }
           });
         },
-        collect: function (obj) {
+        handlePoint: function (obj) {
           this.score++;
+          // Обновляем счетчик
           this.scoreText.setAttribute('value', 'Score: ' + this.score);
           
-          // Проигрываем встроенный звук (писк)
-          const beep = new AudioContext();
-          const o = beep.createOscillator();
-          o.connect(beep.destination);
-          o.start();
-          o.stop(beep.currentTime + 0.1);
-
+          // Удаляем фигуру из сцены
           obj.parentNode.removeChild(obj);
 
-          if (this.score >= this.total) {
-            this.winPanel.setAttribute('visible', 'true');
+          // Проверка победы
+          if (this.score >= this.totalTargets) {
+            this.victoryScreen.setAttribute('visible', 'true');
           }
         }
       });
     </script>
   </head>
   <body>
-    <a-scene physics="debug: false" game-logic cursor="rayOrigin: mouse" raycaster="objects: .target" loading-screen="dotsColor: white; backgroundColor: black">
+    <a-scene physics="debug: false" game-logic cursor="rayOrigin: mouse" loading-screen="enabled: false">
       
-      <a-assets timeout="1000">
-        </a-assets>
+      <a-assets timeout="500"></a-assets>
 
-      <a-sky color="#242424"></a-sky>
-      <a-plane static-body rotation="-90 0 0" width="100" height="100" color="#333"></a-plane>
+      <a-sky color="#121212"></a-sky>
+      <a-plane static-body rotation="-90 0 0" width="100" height="100" color="#2c3e50"></a-plane>
 
       <a-camera position="0 1.6 0">
-        <a-text id="score" value="Score: 0" position="-0.5 0.5 -1" color="gold" width="4"></a-text>
+        <a-text id="score-val" value="Score: 0" position="-0.8 0.6 -1" color="#2ecc71" width="4"></a-text>
         
-        <a-entity id="win-panel" visible="false" position="0 0 -1">
-          <a-plane color="#111" width="1" height="0.6" opacity="0.9"></a-plane>
-          <a-text value="WIN! Score: 3/3" align="center" color="lime" width="4"></a-text>
+        <a-entity id="victory-msg" visible="false" position="0 0 -1.2">
+          <a-plane color="#000" width="1.5" height="0.8" opacity="0.8"></a-plane>
+          <a-text value="VICTORY!" align="center" position="0 0.2 0.01" color="#f1c40f" width="6"></a-text>
+          <a-text value="All targets destroyed" align="center" position="0 -0.1 0.01" color="#ecf0f1" width="3"></a-text>
         </a-entity>
       </a-camera>
 
-      <a-entity id="parent-container" position="0 0 -4">
+      <a-entity id="targets-group" position="0 0 -5">
         
-        <a-sphere class="target" dynamic-body position="-2 5 0" radius="0.5" color="red"
-                  animation="property: position; to: -2 5.5 0; dir: alternate; loop: true"></a-sphere>
+        <a-box class="target" dynamic-body position="-2 6 0" color="#e74c3c"
+               animation="property: rotation; to: 0 360 0; loop: true; dur: 4000">
+        </a-box>
 
-        <a-box class="target" dynamic-body position="0 6 0" color="blue"
-               animation__click="property: scale; from: 1 1 1; to: 1.2 1.2 1.2; startEvents: mouseenter; dur: 200"></a-box>
+        <a-sphere class="target" dynamic-body position="0 8 0" radius="0.6" color="#3498db"
+                  animation__hover="property: scale; from: 1 1 1; to: 1.2 1.2 1.2; startEvents: mouseenter; dur: 200">
+        </a-sphere>
 
-        <a-cone class="target" dynamic-body position="2 7 0" color="green" radius-bottom="0.5"></a-cone>
+        <a-cone class="target" dynamic-body position="2 7 0" color="#27ae60" radius-bottom="0.5"></a-cone>
 
       </a-entity>
 
-      <a-light type="ambient" intensity="0.6"></a-light>
-      <a-light type="directional" position="1 2 1" intensity="0.5"></a-light>
+      <a-light type="ambient" intensity="0.8"></a-light>
+      <a-light type="directional" position="1 4 1" intensity="0.6"></a-light>
 
     </a-scene>
   </body>
